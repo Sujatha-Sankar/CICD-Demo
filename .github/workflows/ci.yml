@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 env:
-  PROJECT_ID: your-gcp-project-id
+  PROJECT_ID: sudharshan-480715
   REGION: asia-south1
   CLUSTER_NAME: your-gke-cluster
   IMAGE_NAME: flask-ci-app
