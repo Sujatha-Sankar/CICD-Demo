@@ -1,32 +1,47 @@
-name: Flask CI Pipeline
+name: CI-CD to GKE
 
 on:
   push:
     branches: [ "main" ]
 
+env:
+  PROJECT_ID: your-gcp-project-id
+  REGION: asia-south1
+  CLUSTER_NAME: your-gke-cluster
+  IMAGE_NAME: flask-ci-app
+  REPO_NAME: flask-repo
+
 jobs:
-  ci:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
       with:
-        python-version: "3.10"
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
+    - name: Set up gcloud
+      uses: google-github-actions/setup-gcloud@v2
 
-    - name: Run tests
-      env:
-          PYTHONPATH: ${{ github.workspace }}
-      run: |
-          python -m pytest tests
+    - name: Configure Docker
+      run: gcloud auth configure-docker asia-south1-docker.pkg.dev
 
-    - name: Build Docker image
+    - name: Build & Push Docker Image
       run: |
-          docker build -t flask-ci-app .
+        docker build -t asia-south1-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest .
+        docker push asia-south1-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest
+
+    - name: Get GKE Credentials
+      run: |
+        gcloud container clusters get-credentials $CLUSTER_NAME \
+          --region $REGION \
+          --project $PROJECT_ID
+
+    - name: Deploy to GKE
+      run: |
+        sed -i "s|IMAGE_PLACEHOLDER|asia-south1-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:latest|" k8s/deployment.yaml
+        kubectl apply -f k8s/
