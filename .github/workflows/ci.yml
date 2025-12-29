@@ -7,7 +7,7 @@ on:
 env:
   PROJECT_ID: sudharshan-480715
   REGION: asia-south1
-  CLUSTER_NAME: your-gke-cluster
+  CLUSTER_NAME: flask-gke-cluster
   IMAGE_NAME: flask-ci-app
   REPO_NAME: flask-repo
 
